@@ -42,7 +42,7 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
       	if(neighbor->visited == false) {
         	neighbor->parent = current_node;
       		neighbor->h_value = CalculateHValue(neighbor);
-      		neighbor->g_value = neighbor->distance(*current_node);
+      		neighbor->g_value = neighbor->distance(*current_node) + current_node->g_value;
           	//std::cout << "@@@ f = " << neighbor->g_value + neighbor->h_value << " g = " << neighbor->g_value << ", h = " << neighbor->h_value << " @@@\n";
           	neighbor->visited = true;
       		open_list.push_back(neighbor);
@@ -50,7 +50,7 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
     	
     }
   //std::cout << "####################\n";
-  current_node->visited = true;
+  	current_node->visited = true;
 }
 
 
@@ -68,18 +68,11 @@ RouteModel::Node *RoutePlanner::NextNode() {
   	auto begin = this->open_list.begin();
   	auto end = this->open_list.end();
 	std::sort(begin, end, compare);
-  	//for(auto val : open_list) {
-    //	std::cout << "### addr = " << val << ", f = " << val->g_value + val->h_value << "\n";
-    //}
   	
   	RouteModel::Node *rst = this->open_list.back();
   	//std::cout << "@@@ addr = " << rst << ", f = " << rst->g_value + rst->h_value << "\n";
   	
   	open_list.pop_back();
-  	//for(auto val : open_list) {
-    //	std::cout << "### addr = " << val << ", f = " << val->g_value + val->h_value << "\n";
-    //}
-  	//std::cout << "####################\n";
   	return rst;
 }
 
@@ -101,7 +94,10 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
 	RouteModel::Node *pNode = current_node;
   	while(pNode != nullptr) {
     	path_found.push_back(*pNode);
-      	distance += pNode->g_value;
+      	if(pNode->parent != nullptr) { //the root node (start node) has no parent anymore
+        	distance += pNode->distance(*(pNode->parent));
+        }
+      	
       	pNode = pNode->parent;
     }
   	std::reverse(path_found.begin(), path_found.end());
@@ -127,14 +123,12 @@ void RoutePlanner::AStarSearch() {
     // TODO: Implement your solution here.
 	current_node = start_node;
   	open_list.push_back(current_node);
-  	int i = 0;
+  	
   	while(!open_list.empty()) {
     	RouteModel::Node *next = NextNode();
-     	i++;
       	//std::cout << "@@@ node f = " << next->g_value + next->h_value << " @@@\n";
       	if(next == end_node) {
         	m_Model.path = ConstructFinalPath(next);
-          	std::cout << "i = " << i << "\n";
           	return;
         } 
       	
